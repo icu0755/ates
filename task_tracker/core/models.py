@@ -3,6 +3,7 @@ import random
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from core.broker import notify
 
 ACCOUNT_ROLE_ADMIN = "admin"
 ACCOUNT_ROLE_DEV = "developer"
@@ -43,10 +44,6 @@ class Task(models.Model):
             "assignee": self.assignee.pk,
             "status": self.status,
         }
-
-
-def notify(topic, payload):
-    pass
 
 
 def create_task(accounts):

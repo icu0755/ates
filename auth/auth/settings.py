@@ -31,6 +31,7 @@ DEBUG = env.bool("DEBUG", default=True)
 ALLOWED_HOSTS = ["*"]
 AUTH_USER_MODEL = "core.Account"
 
+BROKER_URL = env("BROKER_URL", default="")
 
 # Application definition
 
