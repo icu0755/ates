@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from core.models import Account, notify
+from core.models import Account
+from core.broker import notify
 
 
 class AccountSerializer(serializers.ModelSerializer):

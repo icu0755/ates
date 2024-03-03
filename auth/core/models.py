@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from core.broker import notify
+
 ACCOUNT_ROLE_ADMIN = "admin"
 ACCOUNT_ROLE_DEV = "developer"
 ACCOUNT_ROLES = (
@@ -22,7 +24,3 @@ class Account(AbstractUser):
 def create_account(role):
     new_account = Account.objects.create(role=role)
     notify("Accounts.Added", new_account.to_json())  # BE
-
-
-def notify(topic, payload):
-    pass
