@@ -28,6 +28,10 @@ class Account(AbstractUser):
             "assignee": self.role,
         }
 
+    @classmethod
+    def from_json(cls, payload):
+        return cls(**payload)
+
 
 class Task(models.Model):
     assignee = models.ForeignKey(Account, on_delete=models.CASCADE)
