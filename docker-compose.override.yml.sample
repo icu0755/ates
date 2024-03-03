@@ -1,0 +1,17 @@
+version: "3.4"
+services:
+  accounting:
+    ports:
+      - "8001:8000"
+
+  auth:
+    ports:
+      - "8002:8000"
+
+  task_tracker:
+    ports:
+      - "8003:8000"
+
+  mysql:
+    ports:
+      - "3306:3306"

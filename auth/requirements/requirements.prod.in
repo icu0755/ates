@@ -1,0 +1,7 @@
+django-environ
+django-extensions
+django==4.2
+mysqlclient
+pillow
+uwsgi
+django-mysql
