@@ -1,0 +1,73 @@
+version: "3.4"
+services:
+  accounting:
+    build:
+      context: .
+      target: accounting
+    env_file: .env
+    command:
+      - sh
+      - -c
+      - |
+        dockerize -wait tcp://mysql:3306 -timeout 60s
+        python ./manage.py makemigrations
+        python ./manage.py migrate
+        python ./manage.py runserver 0:8000
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    volumes:
+      - "./accounting:/code/"
+#      - "./.env:/code/.env"
+
+  auth:
+    build:
+      context: .
+      target: auth
+    env_file: .env
+    command:
+      - sh
+      - -c
+      - |
+        dockerize -wait tcp://mysql:3306 -timeout 60s
+        python ./manage.py makemigrations
+        python ./manage.py migrate
+        python ./manage.py runserver 0:8000
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    volumes:
+      - "./auth:/code/"
+#      - "./.env:/code/.env"
+
+  task_tracker:
+    build:
+      context: .
+      target: task_tracker
+    env_file: .env
+    command:
+      - sh
+      - -c
+      - |
+        dockerize -wait tcp://mysql:3306 -timeout 60s
+        python ./manage.py makemigrations
+        python ./manage.py migrate
+        python ./manage.py runserver 0:8000
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    volumes:
+      - "./task_tracker:/code/"
+#      - "./.env:/code/.env"
+
+  mysql:
+    image: mysql:8.0
+    env_file: .env
+    volumes:
+      - "./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql"
