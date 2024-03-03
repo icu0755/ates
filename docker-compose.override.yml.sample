@@ -15,3 +15,12 @@ services:
   mysql:
     ports:
       - "3306:3306"
+
+  zookeeper:
+    ports:
+      - "2181:2181"
+
+  broker:
+    ports:
+      - "9092:9092"
+      - "9101:9101"
