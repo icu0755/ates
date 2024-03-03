@@ -1,7 +1,12 @@
+django-cors-headers
 django-environ
 django-extensions
 django==4.2
+djangorestframework
+kafka-python
+msgpack
 mysqlclient
 pillow
 uwsgi
 django-mysql
+django-oauth-toolkit
