@@ -1,33 +1,30 @@
-import msgpack
+import json
+
 from django.conf import settings
-from kafka import KafkaConsumer, KafkaProducer
-
-producer = KafkaProducer(
-    value_serializer=msgpack.dumps, bootstrap_servers=settings.BROKER_URL
-)
-consumer = KafkaConsumer(
-    "Accounts.Updated",
-    "Accounts.Added",
-    value_deserializer=msgpack.loads,
-    bootstrap_servers=settings.BROKER_URL,
-)
+from kafka import KafkaProducer
 
 
-def notify(topic, payload):
-    producer.send(topic, payload)
+def json_serializer(v):
+    return json.dumps(v).encode()
 
 
-def on_message(message):
-    from core.models import Account
+class Broker:
+    producer = None
 
-    if message.headers["topic"] == "Accounts.Updated":
-        account = Account.from_json(message["payload"])
-        account.save()
-    elif message.headers["topic"] == "Accounts.Added":
-        account = Account.from_json(message.value)
-        account.save()
+    @classmethod
+    def send(cls, topic, payload):
+        producer = cls.get_producer()
+        producer.send(topic, payload)
 
+    @classmethod
+    def flush(cls):
+        producer = cls.get_producer()
+        producer.flush()
 
-for msg in consumer:
-    print(msg.headers, msg.value)
-    on_message(msg)
+    @classmethod
+    def get_producer(cls):
+        if cls.producer is None:
+            cls.producer = KafkaProducer(
+                value_serializer=json_serializer, bootstrap_servers=settings.BROKER_URL
+            )
+        return cls.producer

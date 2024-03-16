@@ -3,7 +3,8 @@ import random
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-from core.broker import notify
+from core.broker import Broker
+from event_schema_registry import SchemaRegistry
 
 ACCOUNT_ROLE_ADMIN = "admin"
 ACCOUNT_ROLE_DEV = "developer"
@@ -22,28 +23,14 @@ TASK_STATUSES = (
 
 class Account(AbstractUser):
     role = models.CharField(max_length=40, choices=ACCOUNT_ROLES)
-
-    def to_json(self):
-        return {
-            "id": self.pk,
-            "assignee": self.role,
-        }
-
-    @classmethod
-    def from_json(cls, payload):
-        return cls(**payload)
+    public_id = models.UUIDField()
 
 
 class Task(models.Model):
+    description = models.CharField()
     assignee = models.ForeignKey(Account, on_delete=models.CASCADE)
     status = models.CharField(max_length=40, choices=TASK_STATUSES)
-
-    def to_json(self):
-        return {
-            "id": self.pk,
-            "assignee": self.assignee.pk,
-            "status": self.status,
-        }
+    public_id = models.UUIDField()
 
 
 def create_task(accounts):
@@ -52,14 +39,39 @@ def create_task(accounts):
         assignee=assignee,
         status=TASK_STATUS_OPEN,
     )
-    notify("Tasks.Added", new_task.to_json())  # BE
+    event = {
+        "event": "TasksAdded",
+        "version": 1,
+        "payload": {
+            "public_id": str(new_task.public_id),
+            "assignee_id": str(assignee.public_id),
+            "description": new_task.description,
+        },
+    }
+
+    SchemaRegistry.validate_event(event, "tasks.added", version=1)
+
+    Broker.send("tasks-lifecycle", event)
+
     return new_task
 
 
 def complete_task(task):
     task.status = TASK_STATUS_COMPLETED
     task.save()
-    notify("Tasks.Completed", task.to_json())  # BE
+
+    event = {
+        "event": "TasksCompleted",
+        "version": 1,
+        "payload": {
+            "public_id": str(task.public_id),
+            "assignee_id": str(task.assignee.public_id),
+        },
+    }
+
+    SchemaRegistry.validate_event(event, "tasks.completed", version=1)
+
+    Broker.send("tasks-lifecycle", event)
 
 
 def assign_tasks(accounts):
@@ -67,4 +79,19 @@ def assign_tasks(accounts):
     for task in tasks:
         task.assignee = random.choice(accounts)
         task.save()
-        notify("Tasks.Assigned", task.to_json())  # BE
+
+        event = {
+            "event": "TasksAssigned",
+            "version": 1,
+            "payload": {
+                "public_id": str(task.public_id),
+                "assignee_id": task.assignee.public_id,
+            },
+        }
+
+        SchemaRegistry.validate_event(event, "tasks.assigned", version=1)
+
+        # batching is done internally
+        Broker.send("tasks-lifecycle", event)
+
+    Broker.flush()
